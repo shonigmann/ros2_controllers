@@ -21,18 +21,22 @@
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "effort_controllers/visibility_control.h"
 
+//#include "joint_limits_interface/joint_limits_interface.hpp"
+#include "joint_limits_interface/joint_limits.hpp"
+
+
 namespace effort_controllers
 {
 
 /**
  * \brief Forward command controller for a set of effort controlled joints (linear or angular).
  *
- * This class forwards the commanded efforts down to a set of joints.
+ * This class applies a PID controller to track commanded positions using a set of effort-controlled joints.
  *
  * \param joints Names of the joints to control.
  *
  * Subscribes to:
- * - \b command (std_msgs::msg::Float64MultiArray) : The effort commands to apply.
+ * - \b command (std_msgs::msg::Float64MultiArray) : The joint positions to target.
  */
 class JointGroupPositionController : public forward_command_controller::ForwardCommandController
 {
@@ -66,8 +70,34 @@ public:
 
 private:
   std::vector<control_toolbox::Pid> pids_;
+  std::vector<joint_limits_interface::JointLimits> limits_;
+//  std::vector<joint_limits_interface::EffortJointSaturationHandle> limit_handles_;
   std::chrono::time_point<std::chrono::system_clock> t0;
 };
+
+
+template <class Scalar>
+Scalar wraparoundJointOffset(const Scalar& prev_position,
+                           const Scalar& next_position,
+                           const bool& angle_wraparound)
+{
+// Return value
+Scalar pos_offset = 0.0;
+
+if (angle_wraparound)
+{
+  Scalar dist = angles::shortest_angular_distance(prev_position, next_position);
+
+  // Deal with singularity at M_PI shortest distance
+  if (std::abs(std::abs(dist) - M_PI) < 1e-9)
+  {
+    dist = next_position > prev_position ? std::abs(dist) : -std::abs(dist);
+  }
+  pos_offset = (prev_position + dist) - next_position;
+}
+
+return pos_offset;
+}
 
 }  // namespace effort_controllers
 
