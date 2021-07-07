@@ -24,7 +24,6 @@
 //#include "joint_limits_interface/joint_limits_interface.hpp"
 #include "joint_limits_interface/joint_limits.hpp"
 
-
 namespace effort_controllers
 {
 
@@ -75,14 +74,14 @@ private:
   std::chrono::time_point<std::chrono::system_clock> t0;
 };
 
-
+// TODO: move to its own header/package? 
 template <class Scalar>
 Scalar wraparoundJointOffset(const Scalar& prev_position,
                            const Scalar& next_position,
                            const bool& angle_wraparound)
 {
 // Return value
-Scalar pos_offset = 0.0;
+Scalar pos_offset = next_position - prev_position;
 
 if (angle_wraparound)
 {
