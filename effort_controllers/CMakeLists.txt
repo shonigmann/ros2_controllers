@@ -23,6 +23,7 @@ add_library(effort_controllers
   SHARED
   src/joint_group_effort_controller.cpp
   src/joint_group_position_controller.cpp
+  src/joint_group_velocity_controller.cpp
 )
 target_include_directories(effort_controllers PRIVATE include)
 ament_target_dependencies(effort_controllers
