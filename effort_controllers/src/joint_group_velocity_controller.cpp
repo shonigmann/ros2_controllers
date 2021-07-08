@@ -84,7 +84,6 @@ CallbackReturn JointGroupVelocityController::on_configure(
 //  limit_handles_.resize(joint_names_.size());  // TODO
 
   std::string gains_prefix = "gains";
-  RCLCPP_INFO(get_node()->get_logger(), "JOINT_NAMES_SIZE: %d", joint_names_.size());
   for (auto k = 0u; k < joint_names_.size(); ++k) {
     auto p = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".p").as_double();
     auto i = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".i").as_double();

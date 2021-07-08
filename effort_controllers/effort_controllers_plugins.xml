@@ -9,4 +9,9 @@
       The joint position controller commands a group of joints through the effort interface
     </description>
   </class>
+  <class name="effort_controllers/JointGroupVelocityController" type="effort_controllers::JointGroupVelocityController" base_class_type="controller_interface::ControllerInterface">
+    <description>
+      The joint velocity controller commands a group of joints through the effort interface
+    </description>
+  </class>
 </library>

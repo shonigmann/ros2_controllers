@@ -58,6 +58,7 @@ ForwardCommandController::init(const std::string & controller_name)
 CallbackReturn ForwardCommandController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+
   joint_names_ = node_->get_parameter("joints").as_string_array();
 
   if (joint_names_.empty()) {
