@@ -199,7 +199,6 @@ controller_interface::return_type JointGroupVelocityController::update()
         commanded_effort = limits_[i].max_effort;
       }
     }
-    RCLCPP_INFO(get_node()->get_logger(), "Setting commanded effort %d: %f", i, commanded_effort);
     command_interfaces_[i].set_value(commanded_effort);
   }
 
