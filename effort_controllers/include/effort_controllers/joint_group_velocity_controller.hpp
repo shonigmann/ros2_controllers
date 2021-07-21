@@ -21,8 +21,7 @@
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "effort_controllers/visibility_control.h"
 
-//#include "joint_limits_interface/joint_limits_interface.hpp"
-#include "joint_limits_interface/joint_limits.hpp"
+#include "joint_limits/joint_limits.hpp"
 
 namespace effort_controllers
 {
@@ -69,8 +68,7 @@ public:
 
 private:
   std::vector<control_toolbox::Pid> pids_;
-  std::vector<joint_limits_interface::JointLimits> limits_;
-//  std::vector<joint_limits_interface::EffortJointSaturationHandle> limit_handles_;
+  std::vector<joint_limits::JointLimits> limits_;
   std::chrono::time_point<std::chrono::system_clock> t0;
 };
 

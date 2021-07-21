@@ -20,12 +20,7 @@
 #include "effort_controllers/joint_group_velocity_controller.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
-#include "joint_limits_interface/joint_limits_urdf.hpp"
-#include "joint_limits_interface/joint_limits_rosparam.hpp"
-
-//TODO: use joint_limits_interface implementation when it settles out
-//using joint_limits_interface::VelocityJointSaturationHandle;  // (takes hard velocity and acceleration limits for a velocity controlled joints)
-//using joint_limits_interface::VelocityJointSoftLimitsHandle;  // (takes soft position, and hard velocity and acceleration limits for a velocity controlled joint)
+#include "joint_limits/joint_limits_rosparam.hpp"
 
 
 namespace effort_controllers
@@ -48,15 +43,6 @@ JointGroupVelocityController::init(
   if (ret != controller_interface::return_type::OK) {
     return ret;
   }
-  /* // Not applicable if extended forward command controller... 
-  try {
-    // undeclare interface parameter used in the general forward_command_controller
-    get_node()->undeclare_parameter("interface_name");
-  } catch (const std::exception & e) {
-    RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
-  }
-*/
   return controller_interface::return_type::OK;
 }
 
@@ -81,7 +67,6 @@ CallbackReturn JointGroupVelocityController::on_configure(
   RCLCPP_INFO(get_node()->get_logger(), "got %zu joints\n", joint_names_.size());
   pids_.resize(joint_names_.size());
   limits_.resize(joint_names_.size());
-//  limit_handles_.resize(joint_names_.size());  // TODO
 
   std::string gains_prefix = "gains";
   for (auto k = 0u; k < joint_names_.size(); ++k) {
@@ -94,8 +79,8 @@ CallbackReturn JointGroupVelocityController::on_configure(
     // extract joint limits:
     // TODO: consider soft joint limits as well
     // prioritize rosparam definition
-    if (joint_limits_interface::getJointLimits(joint_names_[k], get_node(), limits_[k])){
-      RCLCPP_INFO(get_node()->get_logger(), "got joint limits from rosparam; previous values will be replaced!\n");
+    if (joint_limits::get_joint_limits(joint_names_[k], get_node(), limits_[k])){
+      RCLCPP_INFO(get_node()->get_logger(), "got joint limits from rosparam!\n");
       if(limits_[k].has_position_limits)
         RCLCPP_INFO(get_node()->get_logger(), "  min_position: %f, max_position: %f\n", limits_[k].min_position, limits_[k].max_position);
       if(limits_[k].has_velocity_limits)
@@ -108,34 +93,10 @@ CallbackReturn JointGroupVelocityController::on_configure(
         RCLCPP_INFO(get_node()->get_logger(), "  max_effort: %f\n", limits_[k].max_effort);
       RCLCPP_INFO(get_node()->get_logger(), "  angle_wraparound: %s\n", limits_[k].angle_wraparound ? "true" : "false");
     }
-    // TODO: URDF should be hard limits corresponding with hardware. Throw warning if Yaml limits are less strict <- they should always be at least as strict if both are defined
-//    // check URDF if limits not specified in rosparam
-//    urdf_joint = TODO
-//    else if (joint_limits_urdf::getJointLimits(urdf_joint, limits_[k])){
-//      RCLCPP_INFO(get_node()->get_logger(), "got joint limits from urdf:\n");
-//      if(limits_[k].has_position_limits)
-//        RCLCPP_INFO(get_node()->get_logger(), "  min_position: %f, max_position: %f\n", limits_[k].min_position, limits_[k].max_position);
-//      if(limits_[k].has_velocity_limits)
-//        RCLCPP_INFO(get_node()->get_logger(), "  min_velocity: %f, max_velocity: %f\n", limits_[k].min_velocity, limits_[k].max_velocity);
-//      if(limits_[k].has_acceleration_limits)
-//        RCLCPP_INFO(get_node()->get_logger(), "  min_acceleration: %f, max_acceleration: %f\n", limits_[k].min_acceleration, limits_[k].max_acceleration);
-//      if(limits_[k].has_jerk_limits)
-//        RCLCPP_INFO(get_node()->get_logger(), "  min_jerk: %f, max_jerk: %f\n", limits_[k].min_jerk, limits_[k].max_jerk);
-//      if(limits_[k].has_effort_limits)
-//        RCLCPP_INFO(get_node()->get_logger(), "  min_effort: %f, max_effort: %f\n", limits_[k].min_effort, limits_[k].max_effort);
-//      RCLCPP_INFO(get_node()->get_logger(), "  angle_wraparound: %d\n", limits_[k].angle_wraparound);
-//    }
-//    else
-//      continue;
-
 
     // IGNORING LIMITS FOR NOW; ONLY APPLYING JOINT WRAPAROUND
-    // populate limit_handle for joint
-    // TODO: figure out if I want state_interfaces_ [which is a vector<loaned interfaces>] or
-    //       state_interface_configuration() [which returns InterfaceConfiguration => a struct with joint interface names and type]
-    //limit_handles_[k] = EffortJointSaturationHandle(, , )
     RCLCPP_WARN(get_node()->get_logger(), "  URDF LIMIT PARSER NOT YET IMPLEMENTED. ONLY LIMITS SPECIFIED IN .YAML CONFIG FILES CONSIDERED.");
-    RCLCPP_WARN(get_node()->get_logger(), "  JOINT_LIMITS_INTERFACE NOT YET IMPLEMENTED. IGNORING POSITION, ACCELERATION, JERK, AND SOFT LIMITS.");
+    RCLCPP_WARN(get_node()->get_logger(), "  JOINT_LIMITS_INTERFACE NOT YET FULLY IMPLEMENTED. IGNORING POSITION, ACCELERATION, JERK, AND SOFT LIMITS.");
   }
 
   return ret;
@@ -191,7 +152,7 @@ controller_interface::return_type JointGroupVelocityController::update()
   {
     double command_velocity = joint_velocity_commands->data[i];
 
-    // TODO: also consider position limits
+    // TODO: also consider position limits?
 
     // check commanded velocity against joint limits; clip as required
     if (limits_[i].has_velocity_limits){

@@ -20,9 +20,7 @@
 #include "control_toolbox/pid.hpp"
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "effort_controllers/visibility_control.h"
-
-//#include "joint_limits_interface/joint_limits_interface.hpp"
-#include "joint_limits_interface/joint_limits.hpp"
+#include "joint_limits/joint_limits.hpp"
 
 namespace effort_controllers
 {
@@ -69,34 +67,10 @@ public:
 
 private:
   std::vector<control_toolbox::Pid> pids_;
-  std::vector<joint_limits_interface::JointLimits> limits_;
-//  std::vector<joint_limits_interface::EffortJointSaturationHandle> limit_handles_;
+  std::vector<joint_limits::JointLimits> limits_;
   std::chrono::time_point<std::chrono::system_clock> t0;
 };
 
-// TODO: move to its own header/package? 
-template <class Scalar>
-Scalar wraparoundJointOffset(const Scalar& prev_position,
-                           const Scalar& next_position,
-                           const bool& angle_wraparound)
-{
-// Return value
-Scalar pos_offset = next_position - prev_position;
-
-if (angle_wraparound)
-{
-  Scalar dist = angles::shortest_angular_distance(prev_position, next_position);
-
-  // Deal with singularity at M_PI shortest distance
-  if (std::abs(std::abs(dist) - M_PI) < 1e-9)
-  {
-    dist = next_position > prev_position ? std::abs(dist) : -std::abs(dist);
-  }
-  pos_offset = (prev_position + dist) - next_position;
-}
-
-return pos_offset;
-}
 
 }  // namespace effort_controllers
 

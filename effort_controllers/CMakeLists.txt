@@ -15,7 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(control_toolbox REQUIRED)
 find_package(forward_command_controller REQUIRED)
-find_package(joint_limits_interface REQUIRED)
+find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 
@@ -30,7 +30,7 @@ ament_target_dependencies(effort_controllers
   angles
   control_toolbox
   forward_command_controller
-  joint_limits_interface
+  hardware_interface
   pluginlib
   rclcpp
 )

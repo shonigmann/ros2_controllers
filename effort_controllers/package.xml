@@ -13,7 +13,7 @@
   <depend>angles</depend>
   <depend>control_toolbox</depend>
   <depend>forward_command_controller</depend>
-  <depend>joint_limits_interface</depend>
+  <depend>hardware_interface</depend>
   <depend>rclcpp</depend>
 
   <build_depend>pluginlib</build_depend>
