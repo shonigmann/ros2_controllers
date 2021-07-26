@@ -70,28 +70,59 @@ CallbackReturn JointGroupVelocityController::on_configure(
 
   std::string gains_prefix = "gains";
   for (auto k = 0u; k < joint_names_.size(); ++k) {
-    auto p = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".p").as_double();
-    auto i = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".i").as_double();
-    auto d = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".d").as_double();
+    double p, i, d;
+    try {
+    p = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".p").as_double();
+    } catch (rclcpp::ParameterTypeException& e) {
+      RCLCPP_DEBUG(get_node()->get_logger(), "%s;\nAttempting to parse param as int", e.what());
+      try {
+        p = (double) get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".p").as_int();
+      } catch(rclcpp::ParameterTypeException& e) {
+        RCLCPP_WARN(get_node()->get_logger(), "%s;\nSetting p=0.0", e.what());
+        p = 0.0;
+      }
+    }
+    try {
+    i = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".i").as_double();
+    } catch (rclcpp::ParameterTypeException& e) {
+      RCLCPP_DEBUG(get_node()->get_logger(), "%s;\nAttempting to parse param as int", e.what());
+      try {
+        i = (double) get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".i").as_int();
+      } catch(rclcpp::ParameterTypeException& e) {
+        RCLCPP_WARN(get_node()->get_logger(), "%s;\nSetting i=0.0", e.what());
+        i = 0.0;
+      }
+    }
+    try {
+    d = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".d").as_double();
+    } catch (rclcpp::ParameterTypeException& e) {
+      RCLCPP_DEBUG(get_node()->get_logger(), "%s;\nAttempting to parse param as int", e.what());
+      try {
+        d = (double) get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".d").as_int();
+      } catch(rclcpp::ParameterTypeException& e) {
+        RCLCPP_WARN(get_node()->get_logger(), "%s;\nSetting d=0.0", e.what());
+        d = 0.0;
+      }
+    }
     pids_[k].initPid(p, i, d, 0.0, 0.0);
-    RCLCPP_INFO(get_node()->get_logger(), "got gains for %s as (%f, %f, %f)\n", joint_names_[k].c_str(), p, i, d);
+    RCLCPP_INFO(get_node()->get_logger(), "got gains for %s as (%f, %f, %f)", joint_names_[k].c_str(), p, i, d);
 
     // extract joint limits:
     // TODO: consider soft joint limits as well
     // prioritize rosparam definition
     if (joint_limits::get_joint_limits(joint_names_[k], get_node(), limits_[k])){
-      RCLCPP_INFO(get_node()->get_logger(), "got joint limits from rosparam!\n");
+      RCLCPP_INFO(get_node()->get_logger(), "got joint limits from rosparam!");
       if(limits_[k].has_position_limits)
-        RCLCPP_INFO(get_node()->get_logger(), "  min_position: %f, max_position: %f\n", limits_[k].min_position, limits_[k].max_position);
+        RCLCPP_INFO(get_node()->get_logger(), "  min_position: %f, max_position: %f", limits_[k].min_position, limits_[k].max_position);
       if(limits_[k].has_velocity_limits)
-        RCLCPP_INFO(get_node()->get_logger(), "  max_velocity: %f\n", limits_[k].max_velocity);
+        RCLCPP_INFO(get_node()->get_logger(), "  max_velocity: %f", limits_[k].max_velocity);
       if(limits_[k].has_acceleration_limits)
-        RCLCPP_INFO(get_node()->get_logger(), "  max_acceleration: %f\n", limits_[k].max_acceleration);
+        RCLCPP_INFO(get_node()->get_logger(), "  max_acceleration: %f", limits_[k].max_acceleration);
       if(limits_[k].has_jerk_limits)
-        RCLCPP_INFO(get_node()->get_logger(), "  max_jerk: %f\n", limits_[k].max_jerk);
+        RCLCPP_INFO(get_node()->get_logger(), "  max_jerk: %f", limits_[k].max_jerk);
       if(limits_[k].has_effort_limits)
-        RCLCPP_INFO(get_node()->get_logger(), "  max_effort: %f\n", limits_[k].max_effort);
-      RCLCPP_INFO(get_node()->get_logger(), "  angle_wraparound: %s\n", limits_[k].angle_wraparound ? "true" : "false");
+        RCLCPP_INFO(get_node()->get_logger(), "  max_effort: %f", limits_[k].max_effort);
+      RCLCPP_INFO(get_node()->get_logger(), "  angle_wraparound: %s", limits_[k].angle_wraparound ? "true" : "false");
     }
 
     // IGNORING LIMITS FOR NOW; ONLY APPLYING JOINT WRAPAROUND
@@ -186,16 +217,16 @@ controller_interface::return_type JointGroupVelocityController::update()
         RCLCPP_WARN_THROTTLE(
           get_node()->get_logger(),
           *node_->get_clock(), 1000,
-          "commanded effort (%f) is below min joint effort (%f); clipping",
-          commanded_effort, -limits_[i].max_effort);
+          "commanded effort (%f) is below min joint effort (%f); clipping; [Debug info: v_current=%f; v_command=%f; error=%f]",
+          commanded_effort, -limits_[i].max_effort, current_velocity, command_velocity, error);
         commanded_effort = -limits_[i].max_effort;
       }
       else if (commanded_effort > limits_[i].max_effort){
         RCLCPP_WARN_THROTTLE(
           get_node()->get_logger(),
           *node_->get_clock(), 1000,
-          "commanded effort (%f) is above max joint effort (%f); clipping",
-          commanded_effort, limits_[i].max_effort);
+          "commanded effort (%f) is above max joint effort (%f); clipping; [Debug info: v_current=%f; v_command=%f; error=%f]",
+          commanded_effort, limits_[i].max_effort, current_velocity, command_velocity, error);
         commanded_effort = limits_[i].max_effort;
       }
     }

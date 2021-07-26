@@ -71,10 +71,45 @@ CallbackReturn JointGroupPositionController::on_configure(
 
   std::string gains_prefix = "gains";
   RCLCPP_INFO(get_node()->get_logger(), "JOINT_NAMES_SIZE: %d", joint_names_.size());
+
   for (auto k = 0u; k < joint_names_.size(); ++k) {
-    auto p = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".p").as_double();
-    auto i = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".i").as_double();
-    auto d = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".d").as_double();
+    double p, i, d;
+    try {
+    p = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".p").as_double();
+    } catch (rclcpp::ParameterTypeException& e) {
+      RCLCPP_DEBUG(get_node()->get_logger(), "%s;\nAttempting to parse param as int", e.what());
+      try {
+        p = (double) get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".p").as_int();
+      } catch(rclcpp::ParameterTypeException& e) {
+        RCLCPP_WARN(get_node()->get_logger(), "%s;\nSetting p=0.0", e.what());
+        p = 0.0;
+      }
+    }
+    try {
+    i = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".i").as_double();
+    } catch (rclcpp::ParameterTypeException& e) {
+      RCLCPP_DEBUG(get_node()->get_logger(), "%s;\nAttempting to parse param as int", e.what());
+      try {
+        i = (double) get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".i").as_int();
+      } catch(rclcpp::ParameterTypeException& e) {
+        RCLCPP_WARN(get_node()->get_logger(), "%s;\nSetting i=0.0", e.what());
+        i = 0.0;
+      }
+    }
+    try {
+    d = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".d").as_double();
+    } catch (rclcpp::ParameterTypeException& e) {
+      RCLCPP_DEBUG(get_node()->get_logger(), "%s;\nAttempting to parse param as int", e.what());
+      try {
+        d = (double) get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".d").as_int();
+      } catch(rclcpp::ParameterTypeException& e) {
+        RCLCPP_WARN(get_node()->get_logger(), "%s;\nSetting d=0.0", e.what());
+        d = 0.0;
+      }
+    }
+    //i = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".i").as_double();
+    //d = get_node()->get_parameter(gains_prefix + "." + joint_names_[k] + ".d").as_double();
+    
     pids_[k].initPid(p, i, d, 0.0, 0.0);
     RCLCPP_INFO(get_node()->get_logger(), "got gains for %s as (%f, %f, %f)\n", joint_names_[k].c_str(), p, i, d);
 
